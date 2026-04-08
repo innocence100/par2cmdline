@@ -47,6 +47,7 @@ libpar2_a_SOURCES = src/crc.cpp src/crc.h \
 	src/verificationhashtable.cpp src/verificationhashtable.h \
 	src/verificationpacket.cpp src/verificationpacket.h \
 	src/libpar2.cpp src/libpar2.h src/libpar2internal.h \
+	src/append7z.cpp src/append7z.h \
 	src/utf8.cpp src/utf8.h
 
 

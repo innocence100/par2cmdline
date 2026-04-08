@@ -20,6 +20,7 @@
 
 #include "libpar2.h"
 #include "commandline.h"
+#include "append7z.h"
 // This is included here, so that cout and cerr are not used elsewhere.
 #include <iostream>
 
@@ -74,68 +75,114 @@ int main(int argc, char* argv[])
     switch (commandline->GetOperation())
     {
       case CommandLine::opCreate:
-	// Create recovery data
-	result = par2create(std::cout,
-			    std::cerr,
-			    commandline->GetNoiseLevel(),
-			    commandline->GetMemoryLimit(),
-			    commandline->GetBasePath(),
+        if (commandline->GetAppend())
+        {
+          result = par2create_append(std::cout,
+                            std::cerr,
+                            commandline->GetNoiseLevel(),
+                            commandline->GetMemoryLimit(),
+                            commandline->GetBasePath(),
 #ifdef _OPENMP
-			    commandline->GetNumThreads(),
-			    commandline->GetFileThreads(),
+                            commandline->GetNumThreads(),
+                            commandline->GetFileThreads(),
+#else
+                            0,
+                            1,
 #endif
-			    commandline->GetParFilename(),
-			    commandline->GetExtraFiles(),
+                            commandline->GetParFilename(),
+                            commandline->GetExtraFiles(),
+                            commandline->GetBlockSize(),
+                            commandline->GetFirstRecoveryBlock(),
+                            commandline->GetRecoveryFileScheme(),
+                            commandline->GetRecoveryFileCount(),
+                            commandline->GetRecoveryBlockCount());
+        }
+        else
+        {
+          result = par2create(std::cout,
+                            std::cerr,
+                            commandline->GetNoiseLevel(),
+                            commandline->GetMemoryLimit(),
+                            commandline->GetBasePath(),
+#ifdef _OPENMP
+                            commandline->GetNumThreads(),
+                            commandline->GetFileThreads(),
+#endif
+                            commandline->GetParFilename(),
+                            commandline->GetExtraFiles(),
 
-			    commandline->GetBlockSize(),
+                            commandline->GetBlockSize(),
 
-			    commandline->GetFirstRecoveryBlock(),
-			    commandline->GetRecoveryFileScheme(),
-			    commandline->GetRecoveryFileCount(),
-			    commandline->GetRecoveryBlockCount()
-			    );
-
+                            commandline->GetFirstRecoveryBlock(),
+                            commandline->GetRecoveryFileScheme(),
+                            commandline->GetRecoveryFileCount(),
+                            commandline->GetRecoveryBlockCount()
+                            );
+        }
         break;
       case CommandLine::opVerify:
       case CommandLine::opRepair:
         {
-          // Verify or Repair damaged files
-          switch (commandline->GetVersion())
+          if (commandline->GetAppended())
           {
-            case CommandLine::verPar1:
-	      result = par1repair(std::cout,
-				  std::cerr,
-				  commandline->GetNoiseLevel(),
-				  commandline->GetMemoryLimit(),
+            result = par2repair_appended(std::cout,
+                              std::cerr,
+                              commandline->GetNoiseLevel(),
+                              commandline->GetMemoryLimit(),
+                              commandline->GetBasePath(),
 #ifdef _OPENMP
-				  commandline->GetNumThreads(),
+                              commandline->GetNumThreads(),
+                              commandline->GetFileThreads(),
+#else
+                              0,
+                              1,
 #endif
-				  commandline->GetParFilename(),
-				  commandline->GetExtraFiles(),
-				  commandline->GetOperation() == CommandLine::opRepair,
-				  commandline->GetPurgeFiles());
+                              commandline->GetParFilename(),
+                              commandline->GetOperation() == CommandLine::opRepair,
+                              commandline->GetPurgeFiles(),
+                              commandline->GetRenameOnly(),
+                              commandline->GetSkipData(),
+                              commandline->GetSkipLeaway());
+          }
+          else
+          {
+            switch (commandline->GetVersion())
+            {
+              case CommandLine::verPar1:
+                result = par1repair(std::cout,
+                                    std::cerr,
+                                    commandline->GetNoiseLevel(),
+                                    commandline->GetMemoryLimit(),
+#ifdef _OPENMP
+                                    commandline->GetNumThreads(),
+#endif
+                                    commandline->GetParFilename(),
+                                    commandline->GetExtraFiles(),
+                                    commandline->GetOperation() == CommandLine::opRepair,
+                                    commandline->GetPurgeFiles());
 
-              break;
-            case CommandLine::verPar2:
-	      result = par2repair(std::cout,
-				  std::cerr,
-				  commandline->GetNoiseLevel(),
-				  commandline->GetMemoryLimit(),
-				  commandline->GetBasePath(),
+                break;
+              case CommandLine::verPar2:
+                result = par2repair(std::cout,
+                                    std::cerr,
+                                    commandline->GetNoiseLevel(),
+                                    commandline->GetMemoryLimit(),
+                                    commandline->GetBasePath(),
 #ifdef _OPENMP
-				  commandline->GetNumThreads(),
-				  commandline->GetFileThreads(),
+                                    commandline->GetNumThreads(),
+                                    commandline->GetFileThreads(),
 #endif
-				  commandline->GetParFilename(),
-				  commandline->GetExtraFiles(),
-				  commandline->GetOperation() == CommandLine::opRepair,
-				  commandline->GetPurgeFiles(),
-				  commandline->GetRenameOnly(),
-				  commandline->GetSkipData(),
-				  commandline->GetSkipLeaway());
-              break;
-	    default:
-              break;
+                                    commandline->GetParFilename(),
+                                    commandline->GetExtraFiles(),
+                                    commandline->GetOperation() == CommandLine::opRepair,
+                                    commandline->GetPurgeFiles(),
+                                    commandline->GetRenameOnly(),
+                                    commandline->GetSkipData(),
+                                    commandline->GetSkipLeaway());
+                break;
+              default:
+                break;
+            }
           }
         }
         break;
