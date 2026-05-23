@@ -56,6 +56,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\append7z.cpp" />
     <ClCompile Include="src\crc.cpp" />
     <ClCompile Include="src\creatorpacket.cpp" />
     <ClCompile Include="src\criticalpacket.cpp" />
@@ -82,6 +83,7 @@
     <ClCompile Include="src\utf8.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\append7z.h" />
     <ClInclude Include="src\crc.h" />
     <ClInclude Include="src\creatorpacket.h" />
     <ClInclude Include="src\criticalpacket.h" />

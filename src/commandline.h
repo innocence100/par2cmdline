@@ -102,6 +102,8 @@ public:
   u32                                 GetNumThreads(void) {return nthreads;}
   u32                                 GetFileThreads(void) {return filethreads;}
 #endif
+  bool                                GetAppend(void) const     {return append;}
+  bool                                GetAppended(void) const   {return appended;}
 
 
   static bool ComputeRecoveryBlockCount(u32 *recoveryblockcount,
@@ -206,6 +208,9 @@ protected:
   bool redundancyset;          // Set if the redundancy has been specified
 
   bool recursive;              // recurse into subdirectories
+
+  bool append;                 // append recovery data to 7z archive
+  bool appended;               // verify/repair from appended PAR2 in 7z
 
 };
 

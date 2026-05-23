@@ -66,6 +66,8 @@ CommandLine::CommandLine(void)
 , redundancysize(0)
 , redundancyset(false)
 , recursive(false)
+, append(false)
+, appended(false)
 {
 }
 
@@ -140,8 +142,11 @@ void CommandLine::usage(void)
     "  -n<n>    : Number of recovery files (max 31) (don't use both -n and -l)\n"
     "  -R       : Recurse into subdirectories\n"
     "             (Be aware of wildcard shell expansion)\n"
-    "   @       : Process a listing of files specified in text (file) input \n"
-    "             (eg. @filelist.txt, or bare @ to read from stdin) \n"
+     "   @       : Process a listing of files specified in text (file) input \n"
+     "             (eg. @filelist.txt, or bare @ to read from stdin) \n"
+     "  --append : Append PAR2 recovery data to a 7z archive\n"
+     "  --appended : Verify/repair 7z archive with appended PAR2 data\n"
+     "             (Input file should be .7z with PAR2 data appended)\n"
     "\n";
   std::cout <<
     "Example:\n"
@@ -838,17 +843,39 @@ bool CommandLine::ReadArgs(int argc, const char * const *argv)
 
         case '-':
           {
-	    if (argv[0] != std::string("--")) {
+	    std::string opt = argv[0];
+            if (opt == "--append")
+            {
+              if (operation != opCreate)
+              {
+                std::cerr << "Cannot specify --append unless creating." << std::endl;
+                return false;
+              }
+              append = true;
+            }
+            else if (opt == "--appended")
+            {
+              if (operation != opVerify && operation != opRepair)
+              {
+                std::cerr << "Cannot specify --appended unless verifying or repairing." << std::endl;
+                return false;
+              }
+              appended = true;
+            }
+            else if (opt != "--")
+            {
               std::cerr << "Unknown option: " << argv[0] << std::endl;
 	      std::cerr << "  (Options must appear after create, repair or verify.)" << std::endl;
 	      std::cerr << "  (Run \"" << path << name << " --help\" for supported options.)" << std::endl;
               return false;
             }
-
-            argc--;
-            argv++;
-            options = false;
-            continue;
+            else
+            {
+              argc--;
+              argv++;
+              options = false;
+              continue;
+            }
           }
           break;
         default:
@@ -1205,6 +1232,33 @@ bool CommandLine::CheckValuesAndSetDefaults() {
       redundancy = 5;
       redundancyset = true;
     }
+
+    // Validate --append option
+    if (append)
+    {
+      if (extrafiles.size() != 1)
+      {
+        std::cerr << "--append requires exactly one input file." << std::endl;
+        return false;
+      }
+
+      const std::string &file = extrafiles[0];
+      if (file.length() < 3 || 0 != stricmp(file.substr(file.length() - 3).c_str(), ".7z"))
+      {
+        std::cerr << "--append requires the input file to have .7z extension." << std::endl;
+        return false;
+      }
+    }
+  }
+
+  // Validate --appended option for verify/repair
+  if (appended)
+  {
+    if (parfilename.length() < 3 || 0 != stricmp(parfilename.substr(parfilename.length() - 3).c_str(), ".7z"))
+    {
+      std::cerr << "--appended requires the input file to have .7z extension." << std::endl;
+      return false;
+    }
   }
 
 
@@ -1446,6 +1500,11 @@ bool CommandLine::SetParFilename(std::string filename)
       {
         parfilename = filename;
         version = verPar1;
+      }
+      else if (appended && 0 == stricmp(tail.c_str(), "7z"))
+      {
+        parfilename = filename;
+        version = verPar2;
       }
 
       if (DiskFile::FileExists(filename)) {
